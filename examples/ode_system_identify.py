@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
     func = ODEFunc().to(device)
     
-    optimizer = optim.RMSprop(func.parameters(), lr=1e-3)
+    optimizer = optim.RMSprop(func.parameters(), lr=1e-2)
     end = time.time()
 
     time_meter = RunningAverageMeter(0.97)
