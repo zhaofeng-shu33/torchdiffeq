@@ -10,8 +10,6 @@ import torch.optim as optim
 parser = argparse.ArgumentParser('ODE demo')
 parser.add_argument('--method', type=str, choices=['dopri5', 'adams'], default='dopri5')
 parser.add_argument('--data_size', type=int, default=3)
-parser.add_argument('--batch_time', type=int, default=3)
-parser.add_argument('--batch_size', type=int, default=1)
 parser.add_argument('--niters', type=int, default=100)
 parser.add_argument('--test_freq', type=int, default=20)
 parser.add_argument('--viz', action='store_true')
@@ -26,7 +24,7 @@ else:
 
 device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
 
-true_y0 = torch.tensor([[0, 0.]]).to(device)
+true_y0 = torch.tensor([0, 0.]).to(device)
 t = torch.linspace(0., 2 * np.pi, args.data_size).to(device)
 true_A = torch.tensor([[0, 1.0], [-1, 0]]).to(device)
 b = 1.0
@@ -39,14 +37,14 @@ b = 1.0
 
 with torch.no_grad():
     true_y = torch.stack((b * t * torch.cos(t), b * t * torch.sin(t))).T
-    true_y = true_y.reshape([args.data_size, 1, 2])
+    # true_y = true_y.reshape([args.data_size, 1, 2])
 
 
 def get_batch():
     # s = torch.from_numpy(np.random.choice(np.arange(args.data_size - args.batch_time, dtype=np.int64), args.batch_size, replace=False))
-    batch_y0 = true_y[0].reshape([1, 1, 2])  # (M, D)
+    batch_y0 = true_y[0]  # (M, D)
     batch_t = t # [:args.data_size]  # (T)
-    batch_y = true_y.reshape([1] + list(true_y.shape))  # (T, M, D)
+    batch_y = true_y # .reshape([1] + list(true_y.shape))  # (T, M, D)
     return batch_y0.to(device), batch_t.to(device), batch_y.to(device)
 
 
@@ -168,7 +166,7 @@ if __name__ == '__main__':
             with torch.no_grad():
                 pred_y = odeint(func, true_y0, t)
                 loss = torch.mean(torch.abs(pred_y - true_y))
-                print('Iter {:04d} | Total Loss {:.6f}'.format(itr, loss.item()))
+                print('Iter {:04d} | Total Loss {:.6f} | variable {:.3f}'.format(itr, loss.item(), func.variable))
                 visualize(true_y, pred_y, func, ii)
                 ii += 1
 
