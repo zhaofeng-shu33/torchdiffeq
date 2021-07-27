@@ -115,7 +115,7 @@ class ODEFunc(nn.Module):
         super(ODEFunc, self).__init__()
         self.variable = nn.Parameter((torch.randn(())))
     def forward(self, t, y):
-        return torch.mul(y, true_A) + self.variable * torch.stack((torch.cos(t), torch.sin(t)))
+        return torch.matmul(y, true_A) + self.variable * torch.stack((torch.cos(t), torch.sin(t)))
 
 # def odefunc(t, y):
     # t: place holder, y tensor
