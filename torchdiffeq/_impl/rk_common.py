@@ -298,7 +298,7 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
             y_next = y0
             f_next = f0
         if self.is_pi_control:
-            dt_next = _optimal_step_size_pi(self, dt, error_ratio, self.safety, self.ifactor, self.dfactor, self.order)
+            dt_next = _optimal_step_size_pi(self, dt, error_ratio, self.safety, self.ifactor, self.dfactor)
         else:
             dt_next = _optimal_step_size(dt, error_ratio, self.safety, self.ifactor, self.dfactor, self.order)
         rk_state = _RungeKuttaState(y_next, f_next, t0, t_next, dt_next, interp_coeff)
