@@ -5,7 +5,8 @@ from .event_handling import find_event
 from .interp import _interp_evaluate, _interp_fit
 from .misc import (_compute_error_ratio,
                    _select_initial_step,
-                   _optimal_step_size)
+                   _optimal_step_size,
+                   _optimal_step_size_pi)
 from .misc import Perturb
 from .solvers import AdaptiveStepsizeEventODESolver
 
@@ -128,6 +129,8 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
                  dfactor=0.2,
                  max_num_steps=2 ** 31 - 1,
                  dtype=torch.float64,
+                 no_reject=False,
+                 is_pi_control=False,
                  **kwargs):
         super(RKAdaptiveStepsizeODESolver, self).__init__(dtype=dtype, y0=y0, **kwargs)
 
@@ -145,7 +148,12 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
         self.dfactor = torch.as_tensor(dfactor, dtype=dtype, device=device)
         self.max_num_steps = torch.as_tensor(max_num_steps, dtype=torch.int32, device=device)
         self.dtype = dtype
-
+        self.no_reject = no_reject
+        self.is_pi_control = is_pi_control
+        if self.is_pi_control:
+            self.previous_error_norm = torch.tensor(1.0, dtype=dtype)
+            self.beta_1 = torch.tensor(0.7 / self.order, requires_grad=True, dtype=dtype)
+            self.beta_2 = torch.tensor(0.4 / self.order, requires_grad=True, dtype=dtype)
         self.step_t = None if step_t is None else torch.as_tensor(step_t, dtype=dtype, device=device)
         self.jump_t = None if jump_t is None else torch.as_tensor(jump_t, dtype=dtype, device=device)
 
@@ -270,9 +278,10 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
         ########################################################
         #                   Update RK State                    #
         ########################################################
-        if accept_step:
+        if accept_step or self.no_reject:
             t_next = t1
             y_next = y1
+            self.previous_error_norm = error_ratio
             interp_coeff = self._interp_fit(y0, y_next, k, dt)
             if on_step_t:
                 if self.next_step_index != len(self.step_t) - 1:
@@ -288,7 +297,10 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
             t_next = t0
             y_next = y0
             f_next = f0
-        dt_next = _optimal_step_size(dt, error_ratio, self.safety, self.ifactor, self.dfactor, self.order)
+        if self.is_pi_control:
+            dt_next = _optimal_step_size_pi(self, dt, error_ratio, self.safety, self.ifactor, self.dfactor, self.order)
+        else:
+            dt_next = _optimal_step_size(dt, error_ratio, self.safety, self.ifactor, self.dfactor, self.order)
         rk_state = _RungeKuttaState(y_next, f_next, t0, t_next, dt_next, interp_coeff)
         return rk_state
 
