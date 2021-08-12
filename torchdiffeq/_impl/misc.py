@@ -95,8 +95,7 @@ def _optimal_step_size_pi(variable_collection, last_step, error_ratio, safety, i
     if error_ratio < 1:
         dfactor = torch.ones((), dtype=last_step.dtype, device=last_step.device)
     error_ratio = error_ratio.type_as(last_step)
-    propose_q = error_ratio ** (-variable_collection.beta_1)
-    propose_q *= variable_collection.previous_error_norm ** variable_collection.beta_2
+    propose_q = error_ratio ** (-variable_collection.beta_1) * variable_collection.previous_error_norm ** variable_collection.beta_2
     factor = torch.min(ifactor, torch.max(safety * propose_q , dfactor))
     return last_step * factor
 
