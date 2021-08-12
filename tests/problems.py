@@ -27,6 +27,12 @@ class SineODE(torch.nn.Module):
             2 * t
         ) - t**3 + 2 * t**4 + (math.pi - 0.25) * t**2
 
+class CosineODE(torch.nn.Module):
+    def forward(self, t, y):
+        return -torch.sin(t)
+
+    def y_exact(self, t):
+        return torch.cos(t)
 
 class LinearODE(torch.nn.Module):
 

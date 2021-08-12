@@ -84,7 +84,9 @@ def odeint(func, y0, t, *, rtol=1e-7, atol=1e-9, method=None, options=None, even
     if shapes is not None:
         solution = _flat_to_shape(solution, (len(t),), shapes)
 
-    if event_fn is None:
+    if return_solver:
+        return solution, solver
+    elif event_fn is None:
         return solution
     else:
         return event_t, solution
