@@ -28,7 +28,7 @@ SOLVERS = {
 }
 
 
-def odeint(func, y0, t, *, rtol=1e-7, atol=1e-9, method=None, options=None, event_fn=None, return_solver=False):
+def odeint(func, y0, t, *, rtol=1e-7, atol=1e-9, method=None, options=None, event_fn=None):
     """Integrate a system of ordinary differential equations.
 
     Solves the initial value problem for a non-stiff system of first order ODEs:
@@ -84,9 +84,7 @@ def odeint(func, y0, t, *, rtol=1e-7, atol=1e-9, method=None, options=None, even
     if shapes is not None:
         solution = _flat_to_shape(solution, (len(t),), shapes)
 
-    if return_solver:
-        return solution, solver
-    elif event_fn is None:
+    if event_fn is None:
         return solution
     else:
         return event_t, solution
