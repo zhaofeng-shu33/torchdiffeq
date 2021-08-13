@@ -26,13 +26,11 @@ class TestPIController(unittest.TestCase):
         #f, y0, t_points, _ = construct_problem(dtype=torch.float64,
         #                                                device='cpu', ode='sine',
         #                                                reverse=False)
-        y, solver = torchdiffeq.odeint(f, y0, t_points,
+        y = torchdiffeq.odeint(f, y0, t_points,
                                 method='bosh3',
-                                options={'is_pi_control': True}, return_solver=True)
+                                options={'is_pi_control': True})
         loss = torch.sum(y)
         loss.backward()
-        print(solver.beta_1.grad)
-        print(solver.beta_2.grad)
 
 if __name__ == '__main__':
     unittest.main()
