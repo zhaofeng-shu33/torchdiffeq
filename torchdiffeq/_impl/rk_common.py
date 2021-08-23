@@ -150,8 +150,7 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
         self.dtype = dtype
         self.no_reject = no_reject
         self.is_pi_control = is_pi_control
-        if self.is_pi_control:
-            self.previous_error_norm = torch.tensor(1.0, dtype=dtype)
+        if self.is_pi_control:            
             self.beta_1 = torch.tensor(0.7 / self.order, requires_grad=True, dtype=dtype)
             self.beta_2 = torch.tensor(0.4 / self.order, requires_grad=True, dtype=dtype)
         self.step_t = None if step_t is None else torch.as_tensor(step_t, dtype=dtype, device=device)
@@ -173,7 +172,8 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
         else:
             first_step = self.first_step
         self.rk_state = _RungeKuttaState(self.y0, f0, t[0], t[0], first_step, [self.y0] * 5)
-
+        if self.is_pi_control:
+            self.previous_error_norm = torch.tensor(1e-4, dtype=self.y0.dtype)
         # Handle step_t and jump_t arguments.
         if self.step_t is None:
             step_t = torch.tensor([], dtype=self.dtype, device=self.y0.device)
@@ -281,7 +281,7 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
         if accept_step or self.no_reject:
             t_next = t1
             y_next = y1
-            self.previous_error_norm = error_ratio
+            
             interp_coeff = self._interp_fit(y0, y_next, k, dt)
             if on_step_t:
                 if self.next_step_index != len(self.step_t) - 1:
@@ -299,6 +299,7 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
             f_next = f0
         if self.is_pi_control:
             dt_next = _optimal_step_size_pi(self, dt, error_ratio, self.safety, self.ifactor, self.dfactor)
+            self.previous_error_norm = torch.max(torch.tensor(1e-4), error_ratio)#.clone()
         else:
             dt_next = _optimal_step_size(dt, error_ratio, self.safety, self.ifactor, self.dfactor, self.order)
         rk_state = _RungeKuttaState(y_next, f_next, t0, t_next, dt_next, interp_coeff)
