@@ -130,6 +130,8 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
                  max_num_steps=2 ** 31 - 1,
                  dtype=torch.float64,
                  no_reject=False,
+                 beta_1 = None,
+                 beta_2 = None,
                  is_pi_control=False,
                  **kwargs):
         super(RKAdaptiveStepsizeODESolver, self).__init__(dtype=dtype, y0=y0, **kwargs)
@@ -150,9 +152,16 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
         self.dtype = dtype
         self.no_reject = no_reject
         self.is_pi_control = is_pi_control
-        if self.is_pi_control:            
-            self.beta_1 = torch.tensor(0.7 / self.order, requires_grad=True, dtype=dtype)
-            self.beta_2 = torch.tensor(0.4 / self.order, requires_grad=True, dtype=dtype)
+        if self.is_pi_control:
+            if beta_1 is None:
+                self.beta_1 = torch.tensor(0.7 / self.order, requires_grad=True, dtype=dtype)
+            else:
+                self.beta_1 = torch.tensor(beta_1, requires_grad=True, dtype=dtype)
+            if beta_2 is None:
+                self.beta_2 = torch.tensor(0.4 / self.order, requires_grad=True, dtype=dtype)
+            else:
+                self.beta_2 = torch.tensor(beta_2, requires_grad=True, dtype=dtype)
+
         self.step_t = None if step_t is None else torch.as_tensor(step_t, dtype=dtype, device=device)
         self.jump_t = None if jump_t is None else torch.as_tensor(jump_t, dtype=dtype, device=device)
 
