@@ -142,8 +142,17 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
         device = y0.device
 
         self.func = func
-        self.rtol = torch.as_tensor(rtol, dtype=dtype, device=device)
-        self.atol = torch.as_tensor(atol, dtype=dtype, device=device)
+        if rtol < 0:
+            self.log_rtol = torch.tensor(rtol, dtype=dtype, device=device, requires_grad=True)
+            self.rtol = torch.exp(self.log_rtol)
+        else:
+            self.rtol = torch.as_tensor(rtol, dtype=dtype, device=device)
+        if atol < 0:
+            self.log_atol = torch.tensor(atol, dtype=dtype, device=device, requires_grad=True)
+            self.atol = torch.exp(self.log_atol)
+        else:
+            self.atol = torch.as_tensor(atol, dtype=dtype, device=device)
+
         self.first_step = None if first_step is None else torch.as_tensor(first_step, dtype=dtype, device=device)
         self.safety = torch.as_tensor(safety, dtype=dtype, device=device)
         self.ifactor = torch.as_tensor(ifactor, dtype=dtype, device=device)
@@ -173,6 +182,9 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
         self.mid = self.mid.to(device=device, dtype=y0.dtype)
 
     def _before_integrate(self, t):
+        if hasattr(self, "log_rtol"):
+            self.rtol = torch.exp(self.log_rtol)
+            self.atol = torch.exp(self.log_atol)
         t0 = t[0]
         f0 = self.func(t[0], self.y0)
         if self.first_step is None:
