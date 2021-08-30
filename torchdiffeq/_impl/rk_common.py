@@ -1,5 +1,6 @@
 import bisect
 import collections
+import warnings
 import torch
 from .event_handling import find_event
 from .interp import _interp_evaluate, _interp_fit
@@ -242,7 +243,9 @@ class RKAdaptiveStepsizeODESolver(AdaptiveStepsizeEventODESolver):
         ########################################################
         #                      Assertions                      #
         ########################################################
-        assert t0 + dt > t0, 'underflow in dt {}'.format(dt.item())
+        if t0 + dt < t0:
+            warnings.warn('underflow in dt {}'.format(dt.item()))
+        # assert t0 + dt > t0, 
         assert torch.isfinite(y0).all(), 'non-finite values in state `y`: {}'.format(y0)
 
         ########################################################
